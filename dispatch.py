@@ -7,6 +7,12 @@ sys.setdefaultencoding("utf8")
 from flask import Flask, Response, make_response, url_for, render_template, request, session, redirect
 import requests
 from bs4 import BeautifulSoup # pip install bs4
+from subprocess import PIPE, Popen 
+import psutil
+import RPi.GPIO as GPIO
+GPIO.setmode(GPIO.BCM)
+Ledpin = 18
+GPIO.setup(Ledpin, GPIO.OUT)
 
 app = Flask(__name__)
 app.debug = True
@@ -130,8 +136,55 @@ def calcul(iot_num=None):
 		cal_num = None
 	return redirect(url_for("iot_gugu",iot_num=cal_num))
 
+@app.route("/test_temp")
+def iot_test_temp():
+	iot_string = " 파이썬 ㄷㄷㄷㄷㄷㄷㄷㄷㄷㄷㄷㄷㄷ"
+	iot_list = [1000, 1234, 2356, 2367, 8796]
+	return render_template("template.html", my_string = iot_string, my_list = iot_list)
+
+	p
+
+def iot_measure_temp(): 
+	process = Popen(["vcgencmd", "measure_temp"], stdout=PIPE) 
+	output, _error = process.communicate() 
+	return float(output[output.index("=") + 1:output.rindex("'")])
+
+@app.route("/info")
+def iot_sys_cpu():
+#----------------------------------------------------
+	cpu_temp            = iot_measure_temp()
+	cpu_percent         = psutil.cpu_percent() 
+	cpu_count           = psutil.cpu_count()
+#----------------------------------------------------
+	memory              = psutil.virtual_memory()
+	mem_total           = memory.total
+	mem_percent         = memory.percent
+#---------------------------------------------------
+	hd_disk             = psutil.disk_usage("/")
+	disk_percent        = hd_disk.percent
+	iot_sys_info_dict = {
+			                     "CPU 온 도"     :cpu_temp,
+								 "CPU 클 럭"     :cpu_percent,
+								 "CPU 코 어"     :cpu_count,
+								 "메모리토탈"    :mem_total,
+								 "메모리사용"    :mem_percent,
+								 "하드디스크"    :disk_percent
+
+								 
+	}
+	return render_template("hw_infor.html", hw_info = iot_sys_info_dict)						
+# projects
+# projects
+
+@app.route("/led/<iot_state>")
+def led_onoff(iot_state):
+	if "on" == iot_state:
+		GPIO.output(Ledpin, GPIO.HIGH)
+	if "off" == iot_state:
+		GPIO.output(Ledpin, GPIO.LOW)
+	if "toggle" == iot_state:
+		GPIO.output(Ledpin, not GPIO.input(Ledpin))
+
+	return iot_sys_cpu()						
 if __name__ == "__main__":
 	app.run(host = "192.168.0.202")
-
-# projects
-# projects
